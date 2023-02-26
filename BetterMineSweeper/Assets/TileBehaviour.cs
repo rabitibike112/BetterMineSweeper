@@ -10,52 +10,499 @@ public class TileBehaviour : MonoBehaviour
     public bool isFlagged = false;
     public int NumberOfBombsAround;
     public int PositionX, PositionY;
-    public GameObject[] AroundTiles;
+    [SerializeField]
+    public bool isHex;
     [SerializeField]
     private Sprite[] Sprites;
     [SerializeField]
     private Sprite[] Numbers;
+    [SerializeField]
+    private Sprite[] HexSprites;
+    [SerializeField]
+    private Sprite[] HexNumbers;
+
+    private bool StartClicking = false;
+    private int ClickingIndex = 0;
+    RaycastHit2D[] Hits;
+    Vector2 Position;
 
     private void Start()
     {
     }
 
-    public void Show()
+    private void FixedUpdate()
     {
-        if(isShown == false)
+        if(StartClicking == true)
         {
-            isShown = true;
-            if (isFlagged == false)
+            Position = new Vector2(0, 0);
+            if(isHex == true)
             {
-                if (isBomb == true)
+                switch (ClickingIndex)
                 {
-                    transform.GetComponent<SpriteRenderer>().sprite = Sprites[1];
-                    StaticLinks.MapGen_Scpt.TriggeredBomb();
-                }
-                else
-                {
-                    transform.GetComponent<SpriteRenderer>().sprite = Numbers[NumberOfBombsAround];
-                    if (NumberOfBombsAround == 0)
-                    {
-                        foreach (GameObject x in AroundTiles)
+                    case 0:
                         {
-                            if(x.TryGetComponent<TileBehaviour>(out TileBehaviour script))
+                            Hits = Physics2D.RaycastAll(new Vector2(transform.position.x, transform.position.y + 0.85f), Vector2.down, 0.1f);
+                            if (Hits.Length != 0)
                             {
-                                script.Show();
+                                if (Hits[0].transform.TryGetComponent(out TileBehaviour script))
+                                {
+                                    script.Show();
+                                }
                             }
-                            
                         }
+                        break;
+                    case 1:
+                        {
+                            Hits = Physics2D.RaycastAll(new Vector2(transform.position.x, transform.position.y - 0.85f), Vector2.down, 0.1f);
+                            if (Hits.Length != 0)
+                            {
+                                if (Hits[0].transform.TryGetComponent(out TileBehaviour script))
+                                {
+                                    script.Show();
+                                }
+                            }
+                        }
+                        break;
+                    case 2:
+                        {
+                            Hits = Physics2D.RaycastAll(new Vector2(transform.position.x - 0.76f, transform.position.y + 0.425f), Vector2.down, 0.1f);
+                            if (Hits.Length != 0)
+                            {
+                                if (Hits[0].transform.TryGetComponent(out TileBehaviour script))
+                                {
+                                    script.Show();
+                                }
+                            }
+                        }
+                        break;
+                    case 3:
+                        {
+                            Hits = Physics2D.RaycastAll(new Vector2(transform.position.x - 0.76f, transform.position.y - 0.425f), Vector2.down, 0.1f);
+                            if (Hits.Length != 0)
+                            {
+                                if (Hits[0].transform.TryGetComponent(out TileBehaviour script))
+                                {
+                                    script.Show();
+                                }
+                            }
+                        }
+                        break;
+                    case 4:
+                        {
+                            Hits = Physics2D.RaycastAll(new Vector2(transform.position.x + 0.76f, transform.position.y + 0.425f), Vector2.down, 0.1f);
+                            if (Hits.Length != 0)
+                            {
+                                if (Hits[0].transform.TryGetComponent(out TileBehaviour script))
+                                {
+                                    script.Show();
+                                }
+                            }
+                        }
+                        break;
+                    case 5:
+                        {
+                            Hits = Physics2D.RaycastAll(new Vector2(transform.position.x + 0.76f, transform.position.y - 0.425f), Vector2.down, 0.1f);
+                            if (Hits.Length != 0)
+                            {
+                                if (Hits[0].transform.TryGetComponent(out TileBehaviour script))
+                                {
+                                    script.Show();
+                                }
+                            }
+                        }
+                        break;
+
+                    default:
+                        {
+                        }
+                        break;
+                }
+                ClickingIndex += 1;
+
+                if (ClickingIndex > 5)
+                {
+                    StartClicking = false;
+                    StaticLinks.MapGen_Scpt.WinCondition();
+                }
+            }
+            else
+            {
+                switch (ClickingIndex)
+                {
+                    case 0:
+                        {
+                            Hits = Physics2D.RaycastAll(new Vector2(transform.position.x - 1, transform.position.y + 1), Vector2.down, 0.1f);
+                            if (Hits.Length != 0)
+                            {
+                                if (Hits[0].transform.TryGetComponent(out TileBehaviour script))
+                                {
+                                    script.Show();
+                                }
+                            }
+                        }
+                        break;
+                    case 1:
+                        {
+                            Hits = Physics2D.RaycastAll(new Vector2(transform.position.x, transform.position.y + 1), Vector2.down, 0.1f);
+                            if (Hits.Length != 0)
+                            {
+                                if (Hits[0].transform.TryGetComponent(out TileBehaviour script))
+                                {
+                                    script.Show();
+                                }
+                            }
+                        }
+                        break;
+                    case 2:
+                        {
+                            Hits = Physics2D.RaycastAll(new Vector2(transform.position.x + 1, transform.position.y + 1), Vector2.down, 0.1f);
+                            if (Hits.Length != 0)
+                            {
+                                if (Hits[0].transform.TryGetComponent(out TileBehaviour script))
+                                {
+                                    script.Show();
+                                }
+                            }
+                        }
+                        break;
+                    case 3:
+                        {
+                            Hits = Physics2D.RaycastAll(new Vector2(transform.position.x - 1, transform.position.y), Vector2.down, 0.1f);
+                            if (Hits.Length != 0)
+                            {
+                                if (Hits[0].transform.TryGetComponent(out TileBehaviour script))
+                                {
+                                    script.Show();
+                                }
+                            }
+                        }
+                        break;
+                    case 4:
+                        {
+                            Hits = Physics2D.RaycastAll(new Vector2(transform.position.x + 1, transform.position.y), Vector2.down, 0.1f);
+                            if (Hits.Length != 0)
+                            {
+                                if (Hits[0].transform.TryGetComponent(out TileBehaviour script))
+                                {
+                                    script.Show();
+                                }
+                            }
+                        }
+                        break;
+                    case 5:
+                        {
+                            Hits = Physics2D.RaycastAll(new Vector2(transform.position.x - 1, transform.position.y - 1), Vector2.down, 0.1f);
+                            if (Hits.Length != 0)
+                            {
+                                if (Hits[0].transform.TryGetComponent(out TileBehaviour script))
+                                {
+                                    script.Show();
+                                }
+                            }
+                        }
+                        break;
+                    case 6:
+                        {
+                            Hits = Physics2D.RaycastAll(new Vector2(transform.position.x, transform.position.y - 1), Vector2.down, 0.1f);
+                            if (Hits.Length != 0)
+                            {
+                                if (Hits[0].transform.TryGetComponent(out TileBehaviour script))
+                                {
+                                    script.Show();
+                                }
+                            }
+                        }
+                        break;
+                    case 7:
+                        {
+                            Hits = Physics2D.RaycastAll(new Vector2(transform.position.x + 1, transform.position.y - 1), Vector2.down, 0.1f);
+                            if (Hits.Length != 0)
+                            {
+                                if (Hits[0].transform.TryGetComponent(out TileBehaviour script))
+                                {
+                                    script.Show();
+                                }
+                            }
+                        }
+                        break;
+                    default:
+                        {
+                        }
+                        break;
+                }
+                ClickingIndex += 1;
+
+                if (ClickingIndex > 7)
+                {
+                    StartClicking = false;
+                    StaticLinks.MapGen_Scpt.WinCondition();
+                }
+            }
+        }
+    }
+
+    private void GetNumberOfBombs()
+    {
+        NumberOfBombsAround = 0;
+        RaycastHit2D[] Hits;
+        Vector2 Position;
+        if (isHex == false)
+        {
+
+            Hits = Physics2D.RaycastAll(new Vector2(transform.position.x - 1, transform.position.y + 1), Vector2.down, 0.1f);
+            if (Hits.Length != 0)
+            {
+                if (Hits[0].transform.TryGetComponent(out TileBehaviour script))
+                {
+                    if(script.isBomb == true)
+                    {
+                        NumberOfBombsAround += 1;
+                    }
+                }
+            }
+            Hits = Physics2D.RaycastAll(new Vector2(transform.position.x, transform.position.y + 1), Vector2.down, 0.1f);
+            if (Hits.Length != 0)
+            {
+                if (Hits[0].transform.TryGetComponent(out TileBehaviour script))
+                {
+                    if (script.isBomb == true)
+                    {
+                        NumberOfBombsAround += 1;
+                    }
+                }
+            }
+            Hits = Physics2D.RaycastAll(new Vector2(transform.position.x + 1, transform.position.y + 1), Vector2.down, 0.1f);
+            if (Hits.Length != 0)
+            {
+                if (Hits[0].transform.TryGetComponent(out TileBehaviour script))
+                {
+                    if (script.isBomb == true)
+                    {
+                        NumberOfBombsAround += 1;
+                    }
+                }
+            }
+            Hits = Physics2D.RaycastAll(new Vector2(transform.position.x - 1, transform.position.y), Vector2.down, 0.1f);
+            if (Hits.Length != 0)
+            {
+                if (Hits[0].transform.TryGetComponent(out TileBehaviour script))
+                {
+                    if (script.isBomb == true)
+                    {
+                        NumberOfBombsAround += 1;
+                    }
+                }
+            }
+            Hits = Physics2D.RaycastAll(new Vector2(transform.position.x + 1, transform.position.y), Vector2.down, 0.1f);
+            if (Hits.Length != 0)
+            {
+                if (Hits[0].transform.TryGetComponent(out TileBehaviour script))
+                {
+                    if (script.isBomb == true)
+                    {
+                        NumberOfBombsAround += 1;
+                    }
+                }
+            }
+            Hits = Physics2D.RaycastAll(new Vector2(transform.position.x - 1, transform.position.y - 1), Vector2.down, 0.1f);
+            if (Hits.Length != 0)
+            {
+                if (Hits[0].transform.TryGetComponent(out TileBehaviour script))
+                {
+                    if (script.isBomb == true)
+                    {
+                        NumberOfBombsAround += 1;
+                    }
+                }
+            }
+            Hits = Physics2D.RaycastAll(new Vector2(transform.position.x, transform.position.y - 1), Vector2.down, 0.1f);
+            if (Hits.Length != 0)
+            {
+                if (Hits[0].transform.TryGetComponent(out TileBehaviour script))
+                {
+                    if (script.isBomb == true)
+                    {
+                        NumberOfBombsAround += 1;
+                    }
+                }
+            }
+            Hits = Physics2D.RaycastAll(new Vector2(transform.position.x + 1, transform.position.y - 1), Vector2.down, 0.1f);
+            if (Hits.Length != 0)
+            {
+                if (Hits[0].transform.TryGetComponent(out TileBehaviour script))
+                {
+                    if (script.isBomb == true)
+                    {
+                        NumberOfBombsAround += 1;
                     }
                 }
             }
         }
-        Destroy(transform.GetComponent<TileBehaviour>());
+        else //x0.76 y0.425
+        {
+            Position = new Vector2(transform.position.x, transform.position.y + 0.85f);
+            Hits = Physics2D.RaycastAll(Position, Vector2.down, 0.1f);
+            if (Hits.Length != 0)
+            {
+                if (Hits[0].transform.TryGetComponent(out TileBehaviour script))
+                {
+                    if (script.isBomb == true)
+                    {
+                        NumberOfBombsAround += 1;
+                    }
+                }
+            }
+            Position = new Vector2(transform.position.x, transform.position.y - 0.85f);
+            Hits = Physics2D.RaycastAll(Position, Vector2.down, 0.1f);
+            if (Hits.Length != 0)
+            {
+                if (Hits[0].transform.TryGetComponent(out TileBehaviour script))
+                {
+                    if (script.isBomb == true)
+                    {
+                        NumberOfBombsAround += 1;
+                    }
+                }
+            }
+            Position = new Vector2(transform.position.x + 0.76f, transform.position.y + 0.425f);
+            Hits = Physics2D.RaycastAll(Position, Vector2.down, 0.1f);
+            if (Hits.Length != 0)
+            {
+                if (Hits[0].transform.TryGetComponent(out TileBehaviour script))
+                {
+                    if (script.isBomb == true)
+                    {
+                        NumberOfBombsAround += 1;
+                    }
+                }
+            }
+            Position = new Vector2(transform.position.x + 0.76f, transform.position.y - 0.425f);
+            Hits = Physics2D.RaycastAll(Position, Vector2.down, 0.1f);
+            if (Hits.Length != 0)
+            {
+                if (Hits[0].transform.TryGetComponent(out TileBehaviour script))
+                {
+                    if (script.isBomb == true)
+                    {
+                        NumberOfBombsAround += 1;
+                    }
+                }
+            }
+            Position = new Vector2(transform.position.x - 0.76f, transform.position.y + 0.425f);
+            Hits = Physics2D.RaycastAll(Position, Vector2.down, 0.1f);
+            if (Hits.Length != 0)
+            {
+                if (Hits[0].transform.TryGetComponent(out TileBehaviour script))
+                {
+                    if (script.isBomb == true)
+                    {
+                        NumberOfBombsAround += 1;
+                    }
+                }
+            }
+            Position = new Vector2(transform.position.x - 0.76f, transform.position.y - 0.425f);
+            Hits = Physics2D.RaycastAll(Position, Vector2.down, 0.1f);
+            if (Hits.Length != 0)
+            {
+                if (Hits[0].transform.TryGetComponent(out TileBehaviour script))
+                {
+                    if (script.isBomb == true)
+                    {
+                        NumberOfBombsAround += 1;
+                    }
+                }
+            }
+        }
     }
 
-    public void AssignAroundTiles(List<GameObject> x)
+    public void Show()
     {
-        AroundTiles = new GameObject[x.Count];
-        AroundTiles = x.ToArray();
+        GetNumberOfBombs();
+        if(isShown == false)
+        {
+            if (isFlagged == false)
+            {
+                isShown = true;
+                if (isBomb == true)
+                {
+                    if (isHex == true)
+                    {
+                        transform.GetComponent<SpriteRenderer>().sprite = HexSprites[1];
+                    }
+                    else
+                    {
+                        transform.GetComponent<SpriteRenderer>().sprite = Sprites[1];
+                    }
+                    StaticLinks.MapGen_Scpt.TriggeredBomb(this.gameObject);
+                }
+                else
+                {
+                    if(isHex == true)
+                    {
+                        transform.GetComponent<SpriteRenderer>().sprite = HexNumbers[NumberOfBombsAround];
+                    }
+                    else
+                    {
+                        transform.GetComponent<SpriteRenderer>().sprite = Numbers[NumberOfBombsAround];
+                    }
+                    
+                    if (NumberOfBombsAround == 0)
+                    {
+                        StartClicking = true;
+                    }
+                    else
+                    {
+                        //Destroy(transform.GetComponent<Rigidbody2D>());
+                        //Destroy(transform.GetComponent<BoxCollider2D>());
+                        StaticLinks.MapGen_Scpt.WinCondition();
+                        //Destroy(transform.GetComponent<TileBehaviour>());
+                    }
+                }
+            }
+        }  
+    }
+    public void ToggleFlag()
+    {
+        if(isShown == false)
+        {
+            isFlagged = !isFlagged;
+            if (isFlagged == true)
+            {
+                if (isHex == true)
+                {
+                    transform.GetComponent<SpriteRenderer>().sprite = HexSprites[2];
+                }
+                else
+                {
+                    transform.GetComponent<SpriteRenderer>().sprite = Sprites[2];
+                }
+            }
+            else
+            {
+                if (isHex == true)
+                {
+                    transform.GetComponent<SpriteRenderer>().sprite = HexSprites[0];
+                }
+                else
+                {
+                    transform.GetComponent<SpriteRenderer>().sprite = Sprites[0];
+                }
+            }
+        }
+    }
+
+    public void SetFlagTrue()
+    {
+        isFlagged = true;
+        if(isHex == true)
+        {
+            transform.GetComponent<SpriteRenderer>().sprite = HexSprites[2];
+        }
+        else
+        {
+            transform.GetComponent<SpriteRenderer>().sprite = Sprites[2];
+        }
+        
     }
 
     public void SetBomb()

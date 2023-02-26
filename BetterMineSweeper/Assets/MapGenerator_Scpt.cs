@@ -2,21 +2,75 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
+using UnityEngine.UI;
 
 public class MapGenerator_Scpt : MonoBehaviour
 {
     [SerializeField]
-    GameObject MapTile;
+    GameObject MapTileSquare;
+    [SerializeField]
+    GameObject MapTileHex;
+    private int Type = 0;
+    // Tile types end
+    private int BombsTodeath = 0;
+    // Bombs to death end
+    private int Gamemode = 1;
+    // gamemode end
     private int MapSizeX, MapSizeY, NumberOfBombs;
-    private GameObject[,] Tiles;
+    // map size end
+    private List<GameObject> Tiles = new List<GameObject>();
+    //private GameObject[,] Tiles;
+    private WaitForSecondsRealtime OneSecond = new WaitForSecondsRealtime(1f);
+    public int SecondsSinceStart = 0;
+    public int NonBombTilesRemaining = -1;
+    public int FlagsRemaining;
+    [SerializeField]
+    public Sprite[] NumberIcons;
+    private GameObject T1, T10, T100, T1000;
+    private GameObject F1, F10, F100, F1000;
+    public List<GameObject> ListOfBombTiles;
+    public bool BombTriggered = false;
     // Start is called before the first frame update
     void Start()
     {
         StaticStart();
+        T1 = StaticLinks.TimeCounter.transform.Find("T1").gameObject;
+        T10 = StaticLinks.TimeCounter.transform.Find("T10").gameObject;
+        T100 = StaticLinks.TimeCounter.transform.Find("T100").gameObject;
+        T1000 = StaticLinks.TimeCounter.transform.Find("T1000").gameObject;
+        F1 = StaticLinks.FlagCounter.transform.Find("F1").gameObject;
+        F10 = StaticLinks.FlagCounter.transform.Find("F10").gameObject;
+        F100 = StaticLinks.FlagCounter.transform.Find("F100").gameObject;
+        F1000 = StaticLinks.FlagCounter.transform.Find("F1000").gameObject;
     }
 
     public void GetGenInfo()
     {
+        //Tile type
+        switch (StaticLinks.TopBCG.transform.Find("Tiles").GetComponent<TMP_Dropdown>().value)
+        {
+            case 0: Type = 0; break; // Square
+            case 1: Type = 1; break; // Hex
+            default: Type = 0; break; // Square
+        }
+        //Bombs to death
+        switch (StaticLinks.TopBCG.transform.Find("Difficulty").GetComponent<TMP_Dropdown>().value)
+        {
+            case 0: BombsTodeath = 1; break;
+            case 1: BombsTodeath = 3; break;
+            case 2: BombsTodeath = 5; break;
+            case 3: BombsTodeath = 1000; break;
+            default: BombsTodeath = 1; break;
+        }
+        //Gamemode Select
+        switch (StaticLinks.TopBCG.transform.Find("Mode").GetComponent<TMP_Dropdown>().value)
+        {
+            case 0: Gamemode = 0; break; // normal
+            case 1: Gamemode = 1; break; // wrap around
+            case 2: Gamemode = 2; break; // endless
+            default: Gamemode = 0; break;
+        }
+
         switch (StaticLinks.UI_DropDown.GetComponent<TMP_Dropdown>().value)
         {
             case 0: SetInputFields(false); MapSizeX = 9; MapSizeY = 9; NumberOfBombs = 10; break;
@@ -28,166 +82,124 @@ public class MapGenerator_Scpt : MonoBehaviour
                 int.TryParse(StaticLinks.InputFieldY.GetComponent<TMP_InputField>().text, out int tempY);
                 MapSizeY = tempY;
                 int.TryParse(StaticLinks.InputFieldBomb.GetComponent<TMP_InputField>().text, out int tempBomb);
-                NumberOfBombs = tempBomb;
+                NumberOfBombs = Mathf.RoundToInt((MapSizeX * MapSizeY) * (Mathf.Clamp(tempBomb, 5, 40) * 0.01f));
                 break;
             default: SetInputFields(false); MapSizeX = 9; MapSizeY = 9; NumberOfBombs = 10; break;
         }
+        FlagsRemaining = NumberOfBombs;
     }
     public void GenerateMap()
     {
         ResetEverything();
         GetGenInfo();
-        Tiles = new GameObject[MapSizeX,MapSizeY];
-        for (int x1 = 0; x1 < MapSizeX; x1++)
-        {
-            for (int x2 = 0; x2 < MapSizeY; x2++)
-            {
-                Tiles[x1, x2] = Instantiate(MapTile, new Vector3(x1, x2, 0), Quaternion.identity);
-                Tiles[x1, x2].transform.name = "" + x1 + " " + x2;
-                Tiles[x1, x2].transform.parent = StaticLinks.TileContainer.transform;
-                Tiles[x1, x2].GetComponent<TileBehaviour>().PositionX = x1;
-                Tiles[x1, x2].GetComponent<TileBehaviour>().PositionY = x2;
-            }
-        }
-        MoveContainerToPossition();
-        AddBombs();
-        CountBombs();
-        CountAroundTiles();
-        StaticLinks.Started = true;
-    }
-
-    private void AddBombs()
-    {
-        while(NumberOfBombs > 0)
+        if (Type == 0)
         {
             for (int x1 = 0; x1 < MapSizeX; x1++)
             {
                 for (int x2 = 0; x2 < MapSizeY; x2++)
                 {
-                    if(NumberOfBombs!=0 && (Random.Range(1, 1000) < 5))
+                    GameObject temp = Instantiate(MapTileSquare, new Vector3(x1, x2, 0), Quaternion.identity);
+                    Tiles.Add(temp);
+                    temp.transform.name = "" + x1 + " " + x2;
+                    temp.transform.parent = StaticLinks.TileContainer.transform;
+                    temp.GetComponent<TileBehaviour>().PositionX = x1;
+                    temp.GetComponent<TileBehaviour>().PositionY = x2;
+                    temp = null;
+                }
+            }
+        }
+        else if (Type == 1)
+        {
+            for (int x1 = 0; x1 < MapSizeX; x1++)
+            {
+                if (x1 % 2 == 0)
+                {
+                    for (int x2 = 0; x2 < MapSizeY; x2++)
                     {
-                        if(Tiles[x1, x2].GetComponent<TileBehaviour>().isBomb == false)
-                        {
-                            Tiles[x1, x2].GetComponent<TileBehaviour>().SetBomb();
-                            NumberOfBombs -= 1;
-                        }
+                        GameObject temp = Instantiate(MapTileHex, new Vector3(x1 * 0.76f, x2 * 0.85f, 0), Quaternion.identity);
+                        Tiles.Add(temp);
+                        temp.transform.name = "" + x1 + " " + x2;
+                        temp.transform.parent = StaticLinks.TileContainer.transform;
+                        temp.GetComponent<TileBehaviour>().PositionX = x1;
+                        temp.GetComponent<TileBehaviour>().PositionY = x2;
+                    }
+                }
+                else
+                {
+                    for (int x2 = -1; x2 < MapSizeY; x2++)
+                    {
+                        GameObject temp = Instantiate(MapTileHex, new Vector3(x1 * 0.76f, (x2 * 0.85f) + 0.425f, 0), Quaternion.identity);
+                        Tiles.Add(temp);
+                        temp.transform.name = "" + x1 + " " + x2;
+                        temp.transform.parent = StaticLinks.TileContainer.transform;
+                        temp.GetComponent<TileBehaviour>().PositionX = x1;
+                        temp.GetComponent<TileBehaviour>().PositionY = x2;
                     }
                 }
             }
+        }
+        MoveContainerToPossition();
+        AddBombs();
+        //CountBombs();
+        UpdateFlagCounter();
+        StaticLinks.Started = true;
+        StartCoroutine(TimerTicker());
+    }
+
+    public void WinCondition()
+    {
+        //Debug.LogError(NonBombTilesRemaining);
+        NonBombTilesRemaining -= 1;
+        if(NonBombTilesRemaining == 0)
+        {
+            StopAllCoroutines();
+            foreach(GameObject x in ListOfBombTiles)
+            {
+                if(x.transform.TryGetComponent<TileBehaviour>(out TileBehaviour script))
+                {
+                    script.SetFlagTrue();
+                }
+            }
+            StaticLinks.HappyFaceText.GetComponent<TMP_Text>().text = "8)";
+            StaticLinks.Started = false;
         }
     }
 
-    public void CountBombs()
+    public void UpdateFlagCounter()
     {
-        for (int x1 = 0; x1 < MapSizeX; x1++)
-        {
-            for (int x2 = 0; x2 < MapSizeY; x2++)
-            {
-                int Number = 0;
-                if ((x1 - 1 >= 0) && (x2 + 1 < MapSizeY)) // top
-                {
-                    if (Tiles[x1 - 1, x2 + 1].GetComponent<TileBehaviour>().isBomb == true)
-                    {
-                        Number += 1;
-                    }
-                }
-                if (x2 + 1 < MapSizeY)
-                {
-                    if (Tiles[x1, x2 + 1].GetComponent<TileBehaviour>().isBomb == true)
-                    {
-                        Number += 1;
-                    }
-                }
-                if ((x1 + 1 < MapSizeX) && (x2 + 1 < MapSizeY))
-                {
-                    if (Tiles[x1 + 1, x2 + 1].GetComponent<TileBehaviour>().isBomb == true)
-                    {
-                        Number += 1;
-                    }
-                } // top end
-                if (x1 - 1 >= 0) //mid
-                {
-                    if (Tiles[x1 - 1, x2].GetComponent<TileBehaviour>().isBomb == true)
-                    {
-                        Number += 1;
-                    }
-                }
-                if (x1 + 1 < MapSizeX)
-                {
-                    if (Tiles[x1 + 1, x2].GetComponent<TileBehaviour>().isBomb == true)
-                    {
-                        Number += 1;
-                    }
-                } // mid end
-                if ((x1 - 1 >= 0) && (x2 - 1 >= 0)) // bot
-                {
-                    if (Tiles[x1 - 1, x2 - 1].GetComponent<TileBehaviour>().isBomb == true)
-                    {
-                        Number += 1;
-                    }
-                }
-                if (x2 - 1 >= 0)
-                {
-                    if (Tiles[x1, x2 - 1].GetComponent<TileBehaviour>().isBomb == true)
-                    {
-                        Number += 1;
-                    }
-                }
-                if ((x1 + 1 < MapSizeX) && (x2 - 1 >= 0))
-                {
-                    if (Tiles[x1 + 1, x2 - 1].GetComponent<TileBehaviour>().isBomb == true)
-                    {
-                        Number += 1;
-                    }
-                } // bot end
-                Tiles[x1, x2].GetComponent<TileBehaviour>().NumberOfBombsAround = Number;
-            }
-        }
+        F1.GetComponent<Image>().sprite = NumberIcons[FlagsRemaining % 10];
+        F10.GetComponent<Image>().sprite = NumberIcons[(FlagsRemaining / 10) % 10];
+        F100.GetComponent<Image>().sprite = NumberIcons[(FlagsRemaining / 100) % 10];
+        F1000.GetComponent<Image>().sprite = NumberIcons[(FlagsRemaining / 1000) % 10];
     }
 
-    public void CountAroundTiles()
+    public void Flag(int x)
     {
-        List<GameObject> AroundTiles = new();
-        for (int x1 = 0; x1 < MapSizeX; x1++)
+        FlagsRemaining += x;
+        UpdateFlagCounter();
+    }
+
+    private void AddBombs()
+    {
+        NonBombTilesRemaining = Tiles.Count - NumberOfBombs;
+        ListOfBombTiles = new();
+        GameObject[] TempTiles = Tiles.ToArray();
+        while (NumberOfBombs > 0)
         {
-            for (int x2 = 0; x2 < MapSizeY; x2++)
+            for(int x1 = 0; x1 < TempTiles.Length; x1++)
             {
-                AroundTiles.Clear();
-                if ((x1 - 1 >= 0) && (x2 + 1 < MapSizeY)) // top
+                if(NumberOfBombs!=0 && (Random.Range(1, 1000) == 1))
                 {
-                    AroundTiles.Add(Tiles[x1-1, x2+1]);
+                    if(TempTiles[x1].GetComponent<TileBehaviour>().isBomb == false)
+                    {
+                        TempTiles[x1].GetComponent<TileBehaviour>().SetBomb();
+                        ListOfBombTiles.Add(TempTiles[x1]);
+                        NumberOfBombs -= 1;
+                    }
                 }
-                if (x2 + 1 < MapSizeY)
-                {
-                    AroundTiles.Add(Tiles[x1, x2+1]);
-                }
-                if ((x1 + 1 < MapSizeX) && (x2 + 1 < MapSizeY))
-                {
-                    AroundTiles.Add(Tiles[x1+1, x2+1]);
-                } // top end
-                if (x1 - 1 >= 0) //mid
-                {
-                    AroundTiles.Add(Tiles[x1-1, x2]);
-                }
-                if (x1 + 1 < MapSizeX)
-                {
-                    AroundTiles.Add(Tiles[x1+1, x2]);
-                } // mid end
-                if ((x1 - 1 >= 0) && (x2 - 1 >= 0)) // bot
-                {
-                    AroundTiles.Add(Tiles[x1 - 1, x2 - 1]);
-                }
-                if (x2 - 1 >= 0)
-                {
-                    AroundTiles.Add(Tiles[x1, x2-1]);
-                }
-                if ((x1 + 1 < MapSizeX) && (x2 - 1 >= 0))
-                {
-                    AroundTiles.Add(Tiles[x1 + 1, x2-1]);
-                } // bot end
-                Tiles[x1, x2].GetComponent<TileBehaviour>().AssignAroundTiles(AroundTiles);
             }
         }
+        Debug.LogError(NonBombTilesRemaining);
     }
 
     private void MoveContainerToPossition()
@@ -196,6 +208,7 @@ public class MapGenerator_Scpt : MonoBehaviour
     }
     public void ResetEverything()
     {
+        Tiles.Clear();
         StaticLinks.TileContainer.transform.position = new Vector3(0, 0, 0);
         if (StaticLinks.TileContainer.transform.childCount > 0)
         {
@@ -204,16 +217,53 @@ public class MapGenerator_Scpt : MonoBehaviour
                 Destroy(StaticLinks.TileContainer.transform.GetChild(zero).gameObject);
             }
         }
+        StopAllCoroutines();
+        NonBombTilesRemaining = -1;
+        SecondsSinceStart = 0;
+        ListOfBombTiles.Clear();
+        StaticLinks.HappyFaceText.GetComponent<TMP_Text>().text = ":)";
     }
 
-    public void TriggeredBomb()
+    public void TriggeredBomb(GameObject bombTile)
     {
-
+        if(BombTriggered == false)
+        {
+            bombTile.GetComponent<SpriteRenderer>().color = Color.red;
+        }
+        BombTriggered = true;
+        foreach (GameObject x in ListOfBombTiles)
+        {
+            if(x.TryGetComponent<TileBehaviour>(out TileBehaviour script))
+            {
+                script.Show();
+            }
+        }
+        StaticLinks.HappyFaceText.GetComponent<TMP_Text>().text = ":(";
+        StaticLinks.Started = false;
+        StopAllCoroutines();
     }
 
     public void QuitGame()
     {
         Application.Quit();
+    }
+
+    public IEnumerator TimerTicker()
+    {
+        while (true)
+        {
+            yield return OneSecond;
+            SecondsSinceStart += 1;
+            UpdateTimeTickerUi();
+        }
+    }
+
+    private void UpdateTimeTickerUi()
+    {
+        T1.GetComponent<Image>().sprite = NumberIcons[SecondsSinceStart % 10];
+        T10.GetComponent<Image>().sprite = NumberIcons[(SecondsSinceStart/10) % 10];
+        T100.GetComponent<Image>().sprite = NumberIcons[(SecondsSinceStart / 100) % 10];
+        T1000.GetComponent<Image>().sprite = NumberIcons[(SecondsSinceStart / 1000) % 10];
     }
 
     public void SetInputFields(bool x)
@@ -232,6 +282,11 @@ public class MapGenerator_Scpt : MonoBehaviour
         StaticLinks.InputFieldX = GameObject.Find("Canvas").transform.Find("TopBCG").transform.Find("InputX").gameObject;
         StaticLinks.InputFieldY = GameObject.Find("Canvas").transform.Find("TopBCG").transform.Find("InputY").gameObject;
         StaticLinks.InputFieldBomb = GameObject.Find("Canvas").transform.Find("TopBCG").transform.Find("InputBomb").gameObject;
+        StaticLinks.FlagCounter = GameObject.Find("Canvas").transform.Find("TopBCG").transform.Find("FlagParent").gameObject;
+        StaticLinks.TimeCounter = GameObject.Find("Canvas").transform.Find("TopBCG").transform.Find("TimeParent").gameObject;
+        StaticLinks.HappyFaceText = GameObject.Find("Canvas").transform.Find("TopBCG").transform.Find("Generate button").transform.GetChild(0).gameObject;
+        StaticLinks.RefCamera = GameObject.Find("RefCamera").gameObject;
+        StaticLinks.TopBCG = GameObject.Find("Canvas").transform.Find("TopBCG").gameObject;
         SetInputFields(false);
     }
 }
@@ -245,4 +300,9 @@ public static class StaticLinks
     public static GameObject InputFieldX { get; set; }
     public static GameObject InputFieldY { get; set; }
     public static GameObject InputFieldBomb { get; set; }
+    public static GameObject FlagCounter { get; set; }
+    public static GameObject TimeCounter { get; set; }
+    public static GameObject HappyFaceText { get; set; }
+    public static GameObject RefCamera { get; set; }
+    public static GameObject TopBCG { get; set; }
 }

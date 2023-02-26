@@ -14,7 +14,7 @@ GameObject:
   - component: {fileID: 6646704688268983635}
   - component: {fileID: -688243849756294739}
   m_Layer: 0
-  m_Name: Tile
+  m_Name: Hex
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -76,7 +76,7 @@ SpriteRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
-  m_Sprite: {fileID: 21300000, guid: 0fd6b967585b6a448ac295def4b254af, type: 3}
+  m_Sprite: {fileID: 21300000, guid: 8680fc5149211084b8d785354d967014, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
@@ -125,14 +125,14 @@ BoxCollider2D:
   m_SpriteTilingProperty:
     border: {x: 0, y: 0, z: 0, w: 0}
     pivot: {x: 0.5, y: 0.5}
-    oldSize: {x: 1, y: 1}
+    oldSize: {x: 1, y: 0.875}
     newSize: {x: 0.5, y: 0.5}
     adaptiveTilingThreshold: 0.5
     drawMode: 0
     adaptiveTiling: 0
   m_AutoTiling: 0
   serializedVersion: 2
-  m_Size: {x: 1, y: 1}
+  m_Size: {x: 1, y: 0.9}
   m_EdgeRadius: 0
 --- !u!114 &-688243849756294739
 MonoBehaviour:
@@ -152,18 +152,18 @@ MonoBehaviour:
   NumberOfBombsAround: 0
   PositionX: 0
   PositionY: 0
-  AroundTiles: []
-  Sprites:
-  - {fileID: 21300000, guid: 0fd6b967585b6a448ac295def4b254af, type: 3}
-  - {fileID: 21300000, guid: ea6dca3b67ee17f4986b6fef7d767590, type: 3}
-  - {fileID: 21300000, guid: 0cf0a0740ce27074686ea4dc56d77e99, type: 3}
-  Numbers:
-  - {fileID: 21300000, guid: b72f2fdefcf72cc45b991d29cf45932b, type: 3}
-  - {fileID: 21300000, guid: 234b0288fc66e7645b348cf261e78ebc, type: 3}
-  - {fileID: 21300000, guid: 908a94a729d72fc469f74417037699d9, type: 3}
-  - {fileID: 21300000, guid: 6a78cb59563db3e4893c29e547b8b711, type: 3}
-  - {fileID: 21300000, guid: ced0385ec0328984983bc41c7532f789, type: 3}
-  - {fileID: 21300000, guid: 99662b583f97f4645a804158c301f66f, type: 3}
-  - {fileID: 21300000, guid: 9a3995a0a006c5d4ba063113de3494a5, type: 3}
-  - {fileID: 21300000, guid: 4e989b74f13182948958fd3fee39b7e4, type: 3}
-  - {fileID: 21300000, guid: f7b611d7a188b924d9d62a081694649c, type: 3}
+  isHex: 1
+  Sprites: []
+  Numbers: []
+  HexSprites:
+  - {fileID: 21300000, guid: 8680fc5149211084b8d785354d967014, type: 3}
+  - {fileID: 21300000, guid: 0a8dae9569b5f9047a6374f5ac568d29, type: 3}
+  - {fileID: 21300000, guid: 5bc7d5f8343a1c44890fb2a232eb8dbd, type: 3}
+  HexNumbers:
+  - {fileID: 21300000, guid: 4e9ca3d9995e4ea4ca284a6a59825b44, type: 3}
+  - {fileID: 21300000, guid: c77cc5258e1f4f54894ea7fa137beef4, type: 3}
+  - {fileID: 21300000, guid: 417418f4c2a04fe478e639a542f4e1c8, type: 3}
+  - {fileID: 21300000, guid: 5b3cf9f4ba99c5c4c805bc5e2be80b4e, type: 3}
+  - {fileID: 21300000, guid: ee4420f281c0dad4ea0e150b06e30735, type: 3}
+  - {fileID: 21300000, guid: a189af4f6d1b24f48afaa02ff660aea2, type: 3}
+  - {fileID: 21300000, guid: a51e5ca038419f94cbdf4d419c7a4c79, type: 3}
