@@ -9,7 +9,6 @@ public class TileBehaviour : MonoBehaviour
     public bool isBomb = false;
     public bool isFlagged = false;
     public int NumberOfBombsAround;
-    public int PositionX, PositionY;
     [SerializeField]
     public bool isHex;
     [SerializeField]
@@ -245,7 +244,6 @@ public class TileBehaviour : MonoBehaviour
     {
         NumberOfBombsAround = 0;
         RaycastHit2D[] Hits;
-        Vector2 Position;
         if (isHex == false)
         {
 
@@ -340,8 +338,7 @@ public class TileBehaviour : MonoBehaviour
         }
         else //x0.76 y0.425
         {
-            Position = new Vector2(transform.position.x, transform.position.y + 0.85f);
-            Hits = Physics2D.RaycastAll(Position, Vector2.down, 0.1f);
+            Hits = Physics2D.RaycastAll(new Vector2(transform.position.x, transform.position.y + 0.85f), Vector2.down, 0.2f);
             if (Hits.Length != 0)
             {
                 if (Hits[0].transform.TryGetComponent(out TileBehaviour script))
@@ -352,8 +349,7 @@ public class TileBehaviour : MonoBehaviour
                     }
                 }
             }
-            Position = new Vector2(transform.position.x, transform.position.y - 0.85f);
-            Hits = Physics2D.RaycastAll(Position, Vector2.down, 0.1f);
+            Hits = Physics2D.RaycastAll(new Vector2(transform.position.x, transform.position.y - 0.85f), Vector2.down, 0.2f);
             if (Hits.Length != 0)
             {
                 if (Hits[0].transform.TryGetComponent(out TileBehaviour script))
@@ -364,8 +360,7 @@ public class TileBehaviour : MonoBehaviour
                     }
                 }
             }
-            Position = new Vector2(transform.position.x + 0.76f, transform.position.y + 0.425f);
-            Hits = Physics2D.RaycastAll(Position, Vector2.down, 0.1f);
+            Hits = Physics2D.RaycastAll(new Vector2(transform.position.x + 0.76f, transform.position.y + 0.425f), Vector2.down, 0.2f);
             if (Hits.Length != 0)
             {
                 if (Hits[0].transform.TryGetComponent(out TileBehaviour script))
@@ -376,8 +371,7 @@ public class TileBehaviour : MonoBehaviour
                     }
                 }
             }
-            Position = new Vector2(transform.position.x + 0.76f, transform.position.y - 0.425f);
-            Hits = Physics2D.RaycastAll(Position, Vector2.down, 0.1f);
+            Hits = Physics2D.RaycastAll(new Vector2(transform.position.x - 0.76f, transform.position.y + 0.425f), Vector2.down, 0.2f);
             if (Hits.Length != 0)
             {
                 if (Hits[0].transform.TryGetComponent(out TileBehaviour script))
@@ -388,8 +382,7 @@ public class TileBehaviour : MonoBehaviour
                     }
                 }
             }
-            Position = new Vector2(transform.position.x - 0.76f, transform.position.y + 0.425f);
-            Hits = Physics2D.RaycastAll(Position, Vector2.down, 0.1f);
+            Hits = Physics2D.RaycastAll(new Vector2(transform.position.x + 0.76f, transform.position.y - 0.425f), Vector2.down, 0.2f);
             if (Hits.Length != 0)
             {
                 if (Hits[0].transform.TryGetComponent(out TileBehaviour script))
@@ -400,8 +393,7 @@ public class TileBehaviour : MonoBehaviour
                     }
                 }
             }
-            Position = new Vector2(transform.position.x - 0.76f, transform.position.y - 0.425f);
-            Hits = Physics2D.RaycastAll(Position, Vector2.down, 0.1f);
+            Hits = Physics2D.RaycastAll(new Vector2(transform.position.x - 0.76f, transform.position.y - 0.425f), Vector2.down, 0.2f);
             if (Hits.Length != 0)
             {
                 if (Hits[0].transform.TryGetComponent(out TileBehaviour script))
@@ -417,6 +409,10 @@ public class TileBehaviour : MonoBehaviour
 
     public void Show()
     {
+        if (StaticLinks.CurrentGamemodeEndless == true)
+        {
+            AddExtraTiles();
+        }
         GetNumberOfBombs();
         if(isShown == false)
         {
@@ -437,6 +433,10 @@ public class TileBehaviour : MonoBehaviour
                 }
                 else
                 {
+                    if(StaticLinks.CurrentGamemodeEndless == true)
+                    {
+                        StaticLinks.MapGen_Scpt.Score();
+                    }
                     if(isHex == true)
                     {
                         transform.GetComponent<SpriteRenderer>().sprite = HexNumbers[NumberOfBombsAround];
@@ -460,6 +460,10 @@ public class TileBehaviour : MonoBehaviour
                 }
             }
         }  
+    }
+    private void AddExtraTiles()
+    {
+        StaticLinks.MapGen_Scpt.GenerateTilesAt(this.transform.position);
     }
     public void ToggleFlag()
     {
@@ -503,6 +507,11 @@ public class TileBehaviour : MonoBehaviour
             transform.GetComponent<SpriteRenderer>().sprite = Sprites[2];
         }
         
+    }
+
+    public void UnSetBomb()
+    {
+        isBomb = false;
     }
 
     public void SetBomb()

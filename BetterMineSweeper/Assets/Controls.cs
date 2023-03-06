@@ -23,9 +23,22 @@ public class Controls : MonoBehaviour
             {
                 if(Hits[0].transform.TryGetComponent(out TileBehaviour script))
                 {
+                    if(StaticLinks.FirstClick == true && script.isBomb == true)
+                    {
+                        script.UnSetBomb();
+                        if(StaticLinks.CurrentGamemodeEndless == false)
+                        {
+                            StaticLinks.MapGen_Scpt.AddOneBomb();
+                        }
+                    }
                     script.Show();
                 }
             }
+            if(StaticLinks.FirstClick == true)
+            {
+                StaticLinks.MapGen_Scpt.StartTimerTicker();
+            }
+            StaticLinks.FirstClick = false;
         }
 
         if (Input.GetMouseButtonDown(1) && StaticLinks.Started == true)
@@ -38,18 +51,25 @@ public class Controls : MonoBehaviour
                 {
                     if(script.isShown == false)
                     {
-                        if (script.isFlagged == false)
+                        if(StaticLinks.CurrentGamemodeEndless == true)
                         {
-                            if (StaticLinks.MapGen_Scpt.FlagsRemaining > 0)
-                            {
-                                script.ToggleFlag();
-                                StaticLinks.MapGen_Scpt.Flag(-1);
-                            }
+                            script.ToggleFlag();
                         }
                         else
                         {
-                            script.ToggleFlag();
-                            StaticLinks.MapGen_Scpt.Flag(1);
+                            if (script.isFlagged == false)
+                            {
+                                if (StaticLinks.MapGen_Scpt.FlagsRemaining > 0)
+                                {
+                                    script.ToggleFlag();
+                                    StaticLinks.MapGen_Scpt.Flag(-1);
+                                }
+                            }
+                            else
+                            {
+                                script.ToggleFlag();
+                                StaticLinks.MapGen_Scpt.Flag(1);
+                            }
                         }
                     }   
                 }

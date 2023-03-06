@@ -10,13 +10,15 @@ public class MapGenerator_Scpt : MonoBehaviour
     GameObject MapTileSquare;
     [SerializeField]
     GameObject MapTileHex;
+    [SerializeField]
+    AudioClip MaybeXenophobic;
     private int Type = 0;
     // Tile types end
     private int BombsTodeath = 0;
     // Bombs to death end
     private int Gamemode = 1;
     // gamemode end
-    private int MapSizeX, MapSizeY, NumberOfBombs;
+    private int MapSizeX, MapSizeY, NumberOfBombs, BombsPercent;
     // map size end
     private List<GameObject> Tiles = new List<GameObject>();
     //private GameObject[,] Tiles;
@@ -30,6 +32,7 @@ public class MapGenerator_Scpt : MonoBehaviour
     private GameObject F1, F10, F100, F1000;
     public List<GameObject> ListOfBombTiles;
     public bool BombTriggered = false;
+    private int ScoreNum;
     // Start is called before the first frame update
     void Start()
     {
@@ -59,16 +62,15 @@ public class MapGenerator_Scpt : MonoBehaviour
             case 0: BombsTodeath = 1; break;
             case 1: BombsTodeath = 3; break;
             case 2: BombsTodeath = 5; break;
-            case 3: BombsTodeath = 1000; break;
+            case 3: BombsTodeath = int.MaxValue; break;
             default: BombsTodeath = 1; break;
         }
         //Gamemode Select
         switch (StaticLinks.TopBCG.transform.Find("Mode").GetComponent<TMP_Dropdown>().value)
         {
-            case 0: Gamemode = 0; break; // normal
-            case 1: Gamemode = 1; break; // wrap around
-            case 2: Gamemode = 2; break; // endless
-            default: Gamemode = 0; break;
+            case 0: Gamemode = 0; StaticLinks.CurrentGamemodeEndless = false; ScoreToFlag(); StaticLinks.UI_DropDown.SetActive(true); break; // normal
+            case 1: Gamemode = 1; BombsPercent = 22; StaticLinks.CurrentGamemodeEndless = true; FlagsToScore(); StaticLinks.UI_DropDown.SetActive(false); break; // endless
+            default: Gamemode = 0; StaticLinks.CurrentGamemodeEndless = false; ScoreToFlag(); StaticLinks.UI_DropDown.SetActive(true); break;
         }
 
         switch (StaticLinks.UI_DropDown.GetComponent<TMP_Dropdown>().value)
@@ -82,7 +84,8 @@ public class MapGenerator_Scpt : MonoBehaviour
                 int.TryParse(StaticLinks.InputFieldY.GetComponent<TMP_InputField>().text, out int tempY);
                 MapSizeY = tempY;
                 int.TryParse(StaticLinks.InputFieldBomb.GetComponent<TMP_InputField>().text, out int tempBomb);
-                NumberOfBombs = Mathf.RoundToInt((MapSizeX * MapSizeY) * (Mathf.Clamp(tempBomb, 5, 40) * 0.01f));
+                BombsPercent = tempBomb;
+                NumberOfBombs = Mathf.RoundToInt((MapSizeX * MapSizeY) * (Mathf.Clamp(tempBomb, 8, 34) * 0.01f));
                 break;
             default: SetInputFields(false); MapSizeX = 9; MapSizeY = 9; NumberOfBombs = 10; break;
         }
@@ -90,60 +93,143 @@ public class MapGenerator_Scpt : MonoBehaviour
     }
     public void GenerateMap()
     {
+        StaticLinks.FirstClick = true;
         ResetEverything();
         GetGenInfo();
-        if (Type == 0)
+        switch (Gamemode)
         {
-            for (int x1 = 0; x1 < MapSizeX; x1++)
-            {
-                for (int x2 = 0; x2 < MapSizeY; x2++)
+            case 0: // normal gamemode
                 {
-                    GameObject temp = Instantiate(MapTileSquare, new Vector3(x1, x2, 0), Quaternion.identity);
-                    Tiles.Add(temp);
-                    temp.transform.name = "" + x1 + " " + x2;
-                    temp.transform.parent = StaticLinks.TileContainer.transform;
-                    temp.GetComponent<TileBehaviour>().PositionX = x1;
-                    temp.GetComponent<TileBehaviour>().PositionY = x2;
-                    temp = null;
+                    if (Type == 0) //if squares
+                    {
+                        for (int x1 = 0; x1 < MapSizeX; x1++)
+                        {
+                            for (int x2 = 0; x2 < MapSizeY; x2++)
+                            {
+                                GameObject temp = Instantiate(MapTileSquare, new Vector3(x1, x2, 0), Quaternion.identity);
+                                Tiles.Add(temp);
+                                temp.transform.name = "" + x1 + " " + x2;
+                                temp.transform.parent = StaticLinks.TileContainer.transform;
+                                temp = null;
+                            }
+                        }
+                    }
+                    else if (Type == 1) //if hexagons
+                    {
+                        for (int x1 = 0; x1 < MapSizeX; x1++)
+                        {
+                            if (x1 % 2 == 0)
+                            {
+                                for (int x2 = 0; x2 < MapSizeY; x2++)
+                                {
+                                    GameObject temp = Instantiate(MapTileHex, new Vector3(x1 * 0.76f, x2 * 0.85f, 0), Quaternion.identity);
+                                    Tiles.Add(temp);
+                                    temp.transform.name = "" + x1 + " " + x2;
+                                    temp.transform.parent = StaticLinks.TileContainer.transform;
+                                }
+                            }
+                            else
+                            {
+                                for (int x2 = -1; x2 < MapSizeY; x2++)
+                                {
+                                    GameObject temp = Instantiate(MapTileHex, new Vector3(x1 * 0.76f, (x2 * 0.85f) + 0.425f, 0), Quaternion.identity);
+                                    Tiles.Add(temp);
+                                    temp.transform.name = "" + x1 + " " + x2;
+                                    temp.transform.parent = StaticLinks.TileContainer.transform;
+                                }
+                            }
+                        }
+                    }
+                    MoveContainerToPossition();
+                    AddBombs();
                 }
-            }
+                break;
+            case 1: // endless
+                {
+                    ListOfBombTiles = new();
+                    if (Type == 0) // squares
+                    {
+                        for (int x1 = 0; x1 < 20; x1++)
+                        {
+                            for (int x2 = 0; x2 < 20; x2++)
+                            {
+                                GameObject temp = Instantiate(MapTileSquare, new Vector3(x1, x2, 0), Quaternion.identity);
+                                Tiles.Add(temp);
+                                temp.transform.name = "" + x1 + " " + x2;
+                                temp.transform.parent = StaticLinks.TileContainer.transform;
+                                if (Random.Range(1, 101) < BombsPercent)
+                                {
+                                    temp.GetComponent<TileBehaviour>().SetBomb();
+                                    ListOfBombTiles.Add(temp);
+                                }
+                                temp = null;
+                            }
+                        }
+                    }
+                    else // hexagons
+                    {
+                        for (int x1 = 0; x1 < 20; x1++)
+                        {
+                            if (x1 % 2 == 0)
+                            {
+                                for (int x2 = 0; x2 < 20; x2++)
+                                {
+                                    GameObject temp = Instantiate(MapTileHex, new Vector3(x1 * 0.76f, x2 * 0.85f, 0), Quaternion.identity);
+                                    Tiles.Add(temp);
+                                    temp.transform.name = "" + x1 + " " + x2;
+                                    temp.transform.parent = StaticLinks.TileContainer.transform;
+                                    if (Random.Range(1, 101) < BombsPercent)
+                                    {
+                                        temp.GetComponent<TileBehaviour>().SetBomb();
+                                        ListOfBombTiles.Add(temp);
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                for (int x2 = -1; x2 < 20; x2++)
+                                {
+                                    GameObject temp = Instantiate(MapTileHex, new Vector3(x1 * 0.76f, (x2 * 0.85f) + 0.425f, 0), Quaternion.identity);
+                                    Tiles.Add(temp);
+                                    temp.transform.name = "" + x1 + " " + x2;
+                                    temp.transform.parent = StaticLinks.TileContainer.transform;
+                                    if (Random.Range(1, 101) < BombsPercent)
+                                    {
+                                        temp.GetComponent<TileBehaviour>().SetBomb();
+                                        ListOfBombTiles.Add(temp);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    MoveContainerToPossition();
+                    //AddBombs();
+                }
+                break;
+            default: break;
         }
-        else if (Type == 1)
+        if (Gamemode == 0)
         {
-            for (int x1 = 0; x1 < MapSizeX; x1++)
-            {
-                if (x1 % 2 == 0)
-                {
-                    for (int x2 = 0; x2 < MapSizeY; x2++)
-                    {
-                        GameObject temp = Instantiate(MapTileHex, new Vector3(x1 * 0.76f, x2 * 0.85f, 0), Quaternion.identity);
-                        Tiles.Add(temp);
-                        temp.transform.name = "" + x1 + " " + x2;
-                        temp.transform.parent = StaticLinks.TileContainer.transform;
-                        temp.GetComponent<TileBehaviour>().PositionX = x1;
-                        temp.GetComponent<TileBehaviour>().PositionY = x2;
-                    }
-                }
-                else
-                {
-                    for (int x2 = -1; x2 < MapSizeY; x2++)
-                    {
-                        GameObject temp = Instantiate(MapTileHex, new Vector3(x1 * 0.76f, (x2 * 0.85f) + 0.425f, 0), Quaternion.identity);
-                        Tiles.Add(temp);
-                        temp.transform.name = "" + x1 + " " + x2;
-                        temp.transform.parent = StaticLinks.TileContainer.transform;
-                        temp.GetComponent<TileBehaviour>().PositionX = x1;
-                        temp.GetComponent<TileBehaviour>().PositionY = x2;
-                    }
-                }
-            }
+            UpdateFlagCounter();
         }
-        MoveContainerToPossition();
-        AddBombs();
-        //CountBombs();
-        UpdateFlagCounter();
+        else if (Gamemode == 1)
+        {
+            UpdateFlagCounter(ScoreNum);
+        }
+        UpdateTimeTickerUi();
         StaticLinks.Started = true;
-        StartCoroutine(TimerTicker());
+    }
+
+    private void FlagsToScore()
+    {
+        StaticLinks.TopBCG.transform.Find("FlagParent").transform.Find("Button").transform.Find("Text (TMP)").GetComponent<TMP_Text>().text = "Score";
+        ScoreNum = 0;
+        UpdateFlagCounter(ScoreNum);
+    }
+
+    private void ScoreToFlag()
+    {
+        StaticLinks.TopBCG.transform.Find("FlagParent").transform.Find("Button").transform.Find("Text (TMP)").GetComponent<TMP_Text>().text = "Flags";
     }
 
     public void WinCondition()
@@ -157,12 +243,23 @@ public class MapGenerator_Scpt : MonoBehaviour
             {
                 if(x.transform.TryGetComponent<TileBehaviour>(out TileBehaviour script))
                 {
-                    script.SetFlagTrue();
+                    if(script.isShown == false)
+                    {
+                        script.SetFlagTrue();
+                    }
                 }
             }
             StaticLinks.HappyFaceText.GetComponent<TMP_Text>().text = "8)";
             StaticLinks.Started = false;
         }
+    }
+
+    public void UpdateFlagCounter(int num)
+    {
+        F1.GetComponent<Image>().sprite = NumberIcons[num % 10];
+        F10.GetComponent<Image>().sprite = NumberIcons[(num / 10) % 10];
+        F100.GetComponent<Image>().sprite = NumberIcons[(num / 100) % 10];
+        F1000.GetComponent<Image>().sprite = NumberIcons[(num / 1000) % 10];
     }
 
     public void UpdateFlagCounter()
@@ -172,11 +269,74 @@ public class MapGenerator_Scpt : MonoBehaviour
         F100.GetComponent<Image>().sprite = NumberIcons[(FlagsRemaining / 100) % 10];
         F1000.GetComponent<Image>().sprite = NumberIcons[(FlagsRemaining / 1000) % 10];
     }
+    public void GenerateTilesAt(Vector3 pos)
+    {
+        RaycastHit2D[] Hits;
+        if (Type == 0) // square
+        {
+            for (int x1 = 0; x1 < StaticLinks.SquareRelativePos.Length; x1++)
+            {
+                Hits = Physics2D.RaycastAll((pos + StaticLinks.SquareRelativePos[x1]), Vector2.down, 0.05f);
+                if (Hits.Length == 0)
+                {
+                    GameObject tempObj = Instantiate(MapTileSquare, pos + StaticLinks.SquareRelativePos[x1], Quaternion.identity);
+                    Tiles.Add(tempObj);
+                    tempObj.transform.name = "" + pos.x + " " + pos.y;
+                    tempObj.transform.parent = StaticLinks.TileContainer.transform;
+                    if (Random.Range(1, 101) < BombsPercent)
+                    {
+                        tempObj.GetComponent<TileBehaviour>().SetBomb();
+                        ListOfBombTiles.Add(tempObj);
+                    }
+                }
+            }
+        }
+        else // hex
+        {
+            for (int x1 = 0; x1 < StaticLinks.HexRelativePos.Length; x1++)
+            {
+                Hits = Physics2D.RaycastAll((pos + StaticLinks.HexRelativePos[x1]), Vector2.down, 0.05f);
+                if (Hits.Length == 0)
+                {
+                    GameObject tempObj = Instantiate(MapTileHex, pos + StaticLinks.HexRelativePos[x1], Quaternion.identity);
+                    Tiles.Add(tempObj);
+                    tempObj.GetComponent<TileBehaviour>().isHex = true;
+                    tempObj.transform.name = "" + pos.x + " " + pos.y;
+                    tempObj.transform.parent = StaticLinks.TileContainer.transform;
+                    if (Random.Range(1, 101) < BombsPercent)
+                    {
+                        tempObj.GetComponent<TileBehaviour>().SetBomb();
+                        ListOfBombTiles.Add(tempObj);
+                    }
+                }
+            }
+        }
+    }
+
+    public void Score()
+    {
+        ScoreNum += 1;
+        UpdateFlagCounter(ScoreNum);
+    }
 
     public void Flag(int x)
     {
         FlagsRemaining += x;
         UpdateFlagCounter();
+    }
+
+    public void AddOneBomb()
+    {
+        GameObject[] TempTilesArr = Tiles.ToArray();
+        foreach(GameObject x in TempTilesArr)
+        {
+            if (x.GetComponent<TileBehaviour>().isBomb == false)
+            {
+                x.GetComponent<TileBehaviour>().SetBomb();
+                ListOfBombTiles.Add(x);
+                break;
+            }
+        }
     }
 
     private void AddBombs()
@@ -199,12 +359,18 @@ public class MapGenerator_Scpt : MonoBehaviour
                 }
             }
         }
-        Debug.LogError(NonBombTilesRemaining);
     }
 
     private void MoveContainerToPossition()
     {
-        StaticLinks.TileContainer.transform.position = new Vector3(-MapSizeX / 2, -MapSizeY / 2, 0);
+        if (Gamemode == 0)
+        {
+            StaticLinks.TileContainer.transform.position = new Vector3(-MapSizeX / 2, -MapSizeY / 2, 0);
+        }
+        else if (Gamemode == 1)
+        {
+            StaticLinks.TileContainer.transform.position = new Vector3(-10, -10, 0);
+        }
     }
     public void ResetEverything()
     {
@@ -226,26 +392,45 @@ public class MapGenerator_Scpt : MonoBehaviour
 
     public void TriggeredBomb(GameObject bombTile)
     {
-        if(BombTriggered == false)
+        BombsTodeath -= 1;
+        if(BombsTodeath == 0)
         {
-            bombTile.GetComponent<SpriteRenderer>().color = Color.red;
-        }
-        BombTriggered = true;
-        foreach (GameObject x in ListOfBombTiles)
-        {
-            if(x.TryGetComponent<TileBehaviour>(out TileBehaviour script))
+            if(Gamemode == 0)
             {
-                script.Show();
+                bombTile.GetComponent<SpriteRenderer>().color = Color.red;
+                if(StaticLinks.TopBCG.transform.Find("Allahu").GetComponent<Toggle>().isOn == true)
+                {
+                    Camera.main.GetComponent<AudioSource>().PlayOneShot(MaybeXenophobic);
+                }
+                foreach (GameObject x in ListOfBombTiles)
+                {
+                    if (x.TryGetComponent<TileBehaviour>(out TileBehaviour script))
+                    {
+                        script.Show();
+                    }
+                }
+                StaticLinks.HappyFaceText.GetComponent<TMP_Text>().text = ":(";
+                StaticLinks.Started = false;
+                StopAllCoroutines();
+            }
+            else if(Gamemode == 1)
+            {
+                bombTile.GetComponent<SpriteRenderer>().color = Color.red;
+                StaticLinks.HappyFaceText.GetComponent<TMP_Text>().text = ":(";
+                StaticLinks.Started = false;
+                StopAllCoroutines();
             }
         }
-        StaticLinks.HappyFaceText.GetComponent<TMP_Text>().text = ":(";
-        StaticLinks.Started = false;
-        StopAllCoroutines();
     }
 
     public void QuitGame()
     {
         Application.Quit();
+    }
+
+    public void StartTimerTicker()
+    {
+        StartCoroutine(TimerTicker());
     }
 
     public IEnumerator TimerTicker()
@@ -305,4 +490,15 @@ public static class StaticLinks
     public static GameObject HappyFaceText { get; set; }
     public static GameObject RefCamera { get; set; }
     public static GameObject TopBCG { get; set; }
+    public static bool FirstClick { get; set; }
+    public static bool CurrentGamemodeEndless { get; set; }
+    public static Vector3[] SquareRelativePos = { new Vector3(-1,1,0),new Vector3(0,1,0), new Vector3(1,1,0),new Vector3(-1,0,0), new Vector3(1,0,0), new Vector3(-1, -1, 0), new Vector3(0, -1, 0),
+        new Vector3(1, -1, 0), new Vector3(-2, 2, 0), new Vector3(-1, 2, 0), new Vector3(0, 2, 0), new Vector3(1, 2, 0), new Vector3(2, 2, 0), new Vector3(-2, 1, 0), new Vector3(2, 1, 0), new Vector3(-2, 0, 0), new Vector3(2, 0, 0),
+        new Vector3(-2, -1, 0), new Vector3(2, -1, 0), new Vector3(-2, -2, 0), new Vector3(-1, -2, 0), new Vector3(0, -2, 0), new Vector3(1, -2, 0), new Vector3(2, -2, 0)};
+
+    public static Vector3[] HexRelativePos = { new Vector3(0, 0.85f, 0), new Vector3(0, -0.85f, 0), new Vector3(-0.76f, 0.425f, 0), new Vector3(0.76f, 0.425f, 0), new Vector3(-0.76f, -0.425f, 0), new Vector3(0.76f, -0.425f, 0), 
+        new Vector3(0.76f, -0.425f, 0), new Vector3(0, 1.7f, 0), new Vector3(0.76f, 1.275f, 0), new Vector3(1.52f, 0.85f, 0), new Vector3(1.52f, 0, 0), new Vector3(1.52f, -0.85f, 0), new Vector3(0.76f, -1.275f, 0), new Vector3(0f, -1.7f, 0), 
+        new Vector3(-0.76f, 1.275f, 0), new Vector3(-1.52f, 0.85f, 0), new Vector3(-1.52f, 0, 0), new Vector3(-1.52f, -0.85f, 0), new Vector3(-0.76f, -1.275f, 0)};
 }
+
+//(x1 * 0.76f, (x2 * 0.85f) + 0.425f, 0)
